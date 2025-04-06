@@ -1,7 +1,6 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-app.js'
-import { getFirestore, collection, addDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-firestore.js'
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithRedirect, getRedirectResult } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-auth.js'
-
+import { getFirestore, collection, doc, getDoc, setDoc, addDoc, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-firestore.js'
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithRedirect, getRedirectResult, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-auth.js'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyB96AD9SHGM2BsfDULvmxIPMCSGt2SPoXY',
@@ -11,78 +10,94 @@ const firebaseConfig = {
   messagingSenderId: '481796192394',
   appId: '1:481796192394:web:7f078ca3abc84b0cb81573',
   measurementId: 'G-D91Q2V11RB'
+
 };
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app)
 const db = getFirestore(app)
 const collectionPhrases = collection(db, "phrases")
+const formAddPhrase = document.querySelector('[data-js="add-phrase-form"]')
+const buttonLogin = document.querySelector('[data-js="button-form"]')
+const phrasesList = document.querySelector('[data-js="phrases-list"]')
+const buttonlogoutUser = document.querySelector('[data-js="logout"]')
+const accountDetailsContainer = document.querySelector('[data-js="account-details"]')
+const accountDetails = document.createElement('p')
 
 
+const to = promise => promise
+  .then(result => [null, result])
+  .catch(error => [error])
 
 
 const login = async () => {
 
-  try {
-    const provider = new GoogleAuthProvider()
-    signInWithRedirect(auth, provider)
-  } catch (error) {
-    console.log(`Login error: ${error}`)
+  const provider = new GoogleAuthProvider()
+  const [error] = await to(signInWithPopup(auth, provider))
+
+  M.Modal.getInstance(document.querySelector('[data-modal="login"]')).close()
+
+  if (error) {
+    alert('Ocorreu um erro ao realizar Login.')
+
   }
+
 }
 
 const logoutUser = async unsubscribe => {
 
-  try {
+  const [error] = await to(signOut(auth))
 
-    await signOut(auth)
-    unsubscribe()
-
-  } catch (error) {
-    console.log(`Logout error: ${error}`)
+  if (error) {
+    alert(`Logout error: ${error}`)
+    return
   }
 
+  unsubscribe()
 }
 
-const addPhrase = async e => {
+const closeModalAddPhrase = () => {
+  const modalAddPhrase = document.querySelector('[data-modal="add-phrase"]')
+  M.Modal.getInstance(modalAddPhrase).close()
+}
+
+const addPhrase = async (e, user) => {
 
   e.preventDefault()
 
-  try {
-    const addedDoc = await addDoc(collectionPhrases, {
-      movieTitle: DOMPurify.sanitize(e.target.title.value),
-      phrase: DOMPurify.sanitize(e.target.phrase.value)
-    })
+  const [error] = await to(addDoc(collectionPhrases, {
+    movieTitle: DOMPurify.sanitize(e.target.title.value),
+    phrase: DOMPurify.sanitize(e.target.phrase.value),
+    idUser: user.uid
+  }))
 
-    console.log('Document adicionado com o ID:', addedDoc.id)
-
-    e.target.reset()
-    const modalAddPhrase = document.querySelector('[data-modal="add-phrase"]')
-    M.Modal.getInstance(modalAddPhrase).close()
-
-  } catch (error) {
-    console.log('erro de adição', error)
+  if (error) {
+    alert('Ocorreu um erro ao adicionar Frase')
+    return
   }
+  e.target.reset()
+  closeModalAddPhrase()
+  
 }
 
 const initCollapsibles = (collapsibles) => M.Collapsible.init(collapsibles)
 
+const handleParagraphMessageLogin = () => {
 
+  const phrasesContainer = document.querySelector('[data-js="phrases-container"]')
+  const loginMessage = document.createElement('h5')
 
-const handleAuthStateChanged = async user => {
+  loginMessage.textContent = 'Faça login para ver as frases'
+  loginMessage.classList.add('center-align', 'white-text')
+  loginMessage.setAttribute('data-js', 'login-message')
+  phrasesContainer.append(loginMessage)
+}
 
-
-  try {
-    const result = await getRedirectResult(auth)
-    console.log(result)
-  } catch (error) {
-    console.log('Login Redirect: ', error)
-  }
-
+const renderLinks = ({ userExists }) => {
   const lis = [...document.querySelector('[data-js="nav-ul"]').children]
 
   lis.forEach(li => {
-    const liShouldBeVisible = li.dataset.js.includes(user ? 'logged-in' : 'logged-out')
+    const liShouldBeVisible = li.dataset.js.includes(userExists ? 'logged-in' : 'logged-out')
 
     if (liShouldBeVisible) {
       li.classList.remove('hide')
@@ -90,43 +105,45 @@ const handleAuthStateChanged = async user => {
     }
     li.classList.add('hide')
   })
+}
 
+const handleAnonymousUser = () => {
+  formAddPhrase.onsubmit = null
+  buttonLogin.addEventListener('click', login)
+  buttonlogoutUser.onclick = null
+  phrasesList.innerHTML = ''
+  accountDetailsContainer.innerHTML = ''
+}
+
+const removeLParagraphMessagelogin = () => {
   const loginMessageExists = document.querySelector('[data-js="login-message"]')
   loginMessageExists?.remove()
+}
 
-  const formAddPhrase = document.querySelector('[data-js="add-phrase-form"]')
-  const buttonLogin = document.querySelector('[data-js="button-form"]')
-  const phrasesList = document.querySelector('[data-js="phrases-list"]')
-  const buttonlogoutUser = document.querySelector('[data-js="logout"]')
-  const accountDetailsContainer = document.querySelector('[data-js="account-details"]')
-  const accountDetails = document.createElement('p')
+const createRegistrationUserDb = async (user) => {
+const userDocRef = doc(db, 'users', user.uid)
+  const [error, docSnapshot] = await to(getDoc(userDocRef))
 
-
-
-
-  if (!user) {
-
-
-    const phrasesContainer = document.querySelector('[data-js="phrases-container"]')
-    const loginMessage = document.createElement('h5')
-
-    loginMessage.textContent = 'Faça login para ver as frases'
-    loginMessage.classList.add('center-align', 'white-text')
-    loginMessage.setAttribute('data-js', 'login-message')
-    phrasesContainer.append(loginMessage)
-
-    formAddPhrase.removeEventListener('submit', addPhrase)
-    buttonLogin.addEventListener('click', login)
-    buttonlogoutUser.onclick = null
-    phrasesList.innerHTML = ''
-    accountDetailsContainer.innerHTML = ''
+  if(error){
+    alert('Ocorreu um erro ao tentar registrar Usuário.')
     return
   }
 
-  formAddPhrase.addEventListener('submit', addPhrase)
-  buttonLogin.removeEventListener('click', login)
+  if (!docSnapshot.exists()) {
+    setDoc(userDocRef, {
+      name: user.displayName,
+      email: user.email,
+      userId: user.uid
+    })
+  }
 
-  const unsubscribe = onSnapshot(collectionPhrases, snapshot => {
+  
+}
+
+const renderPhrases = (user) => {
+
+  const queryPhrases = query(collectionPhrases, where('idUser', '==', user.uid))
+  const unsubscribe = onSnapshot(queryPhrases, snapshot => {
 
     const documentFragment = document.createDocumentFragment()
 
@@ -152,14 +169,44 @@ const handleAuthStateChanged = async user => {
 
   })
 
+  return unsubscribe
+}
+
+const handleSignedUser = (user) => {
+
+  createRegistrationUserDb(user)
+  formAddPhrase.onsubmit = e => addPhrase(e, user)
+  buttonLogin.removeEventListener('click', login)
+
+  const unsubscribe = renderPhrases(user)
+
   buttonlogoutUser.onclick = () => logoutUser(unsubscribe)
 
-  accountDetails.textContent = DOMPurify.sanitize(`${user.displayName} | ${user.email}`)
+  accountDetails.textContent = `${user.displayName} | ${user.email}`
   accountDetailsContainer.append(accountDetails)
-  initCollapsibles(phrasesList)
 
 }
 
+const handleAuthStateChanged = async user => {
+
+  renderLinks({ userExists: !!user })
+  removeLParagraphMessagelogin()
+
+  if (!user) {
+    handleParagraphMessageLogin()
+    handleAnonymousUser()
+    return
+  }
+
+  handleSignedUser({
+    displayName: DOMPurify.sanitize(user.displayName),
+    email: DOMPurify.sanitize(user.email),
+    uid: DOMPurify.sanitize(user.uid)
+  })
+
+  initCollapsibles(phrasesList)
+
+}
 
 const initModals = () => {
   const modals = document.querySelectorAll('[data-js="modal"]')
