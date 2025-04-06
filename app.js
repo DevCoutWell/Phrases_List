@@ -2,7 +2,6 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase
 import { getFirestore, collection, doc, getDoc, setDoc, addDoc, onSnapshot, query, where } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-firestore.js'
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithRedirect, getRedirectResult, signInWithPopup } from 'https://www.gstatic.com/firebasejs/9.6.6/firebase-auth.js'
 
-
 const firebaseConfig = {
   apiKey: 'AIzaSyB96AD9SHGM2BsfDULvmxIPMCSGt2SPoXY',
   authDomain: 'movies-phrases.firebaseapp.com',
