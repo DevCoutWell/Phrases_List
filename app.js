@@ -35,13 +35,13 @@ const login = async () => {
   const provider = new GoogleAuthProvider()
   const [error] = await to(signInWithPopup(auth, provider))
 
-  M.Modal.getInstance(document.querySelector('[data-modal="login"]')).close()
+ M.Modal.getInstance(document.querySelector('[data-modal="login"]')).close()
 
   if (error) {
     alert('Ocorreu um erro ao realizar Login.')
 
   }
-
+ 
 }
 
 const logoutUser = async unsubscribe => {

@@ -48,7 +48,6 @@
 
   .header-nav-bar{
     width: 100%;
-    
   }
 
   [data-js="nav-ul"]{
@@ -59,5 +58,6 @@
   }
   [data-js="nav-ul"] a{
     color: #ffffff88 !important;
+    
   }
 }
