@@ -43,3 +43,22 @@
 .input-field .prefix.active {
   color: #fff;
 }
+
+@media (max-width: 765px) {
+
+  .header-nav-bar{
+    width: 100%;
+    
+  }
+
+  [data-js="nav-ul"]{
+   display: flex;
+   flex-direction: column;
+   flex-wrap: wrap;
+   
+  }
+  [data-js="nav-ul"] a{
+    color: #ffffff88 !important;
+  }
+
+}
